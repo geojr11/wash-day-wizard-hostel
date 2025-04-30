@@ -1,11 +1,15 @@
 
 import { useLaundry } from "@/context/LaundryContext";
-import RoleSelector from "@/components/RoleSelector";
+import { LoginPage } from "@/components/LoginPage";
 import StudentDashboard from "@/components/StudentDashboard";
 import AdminDashboard from "@/components/AdminDashboard";
 
 export const LaundryWizard = () => {
-  const { role } = useLaundry();
+  const { role, isAuthenticated } = useLaundry();
+
+  if (!isAuthenticated) {
+    return <LoginPage />;
+  }
 
   if (role === 'admin') {
     return <AdminDashboard />;
@@ -15,7 +19,7 @@ export const LaundryWizard = () => {
     return <StudentDashboard />;
   }
 
-  return <RoleSelector />;
+  return <LoginPage />;
 };
 
 export default LaundryWizard;

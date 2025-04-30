@@ -6,6 +6,8 @@ import { useToast } from '@/components/ui/use-toast';
 interface LaundryContextType {
   bookings: Booking[];
   role: Role;
+  isAuthenticated: boolean;
+  username: string;
   addBooking: (booking: Omit<Booking, 'id' | 'timestamp'>) => void;
   removeBooking: (id: string) => void;
   updateBooking: (id: string, booking: Partial<Booking>) => void;
@@ -13,6 +15,10 @@ interface LaundryContextType {
   isSlotAvailable: (day: string, slot: number) => boolean;
   getBookingsByDay: (day: string) => Booking[];
   getBookingsByStudent: (name: string) => Booking[];
+  login: (username: string) => void;
+  logout: () => void;
+  uploadFile: (file: File) => void;
+  uploadedFiles: string[];
 }
 
 const LaundryContext = createContext<LaundryContextType | undefined>(undefined);
@@ -27,6 +33,19 @@ export const LaundryProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const savedRole = localStorage.getItem('laundryRole');
     return (savedRole as Role) || 'student';
   });
+
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
+    return localStorage.getItem('laundryAuth') === 'true';
+  });
+
+  const [username, setUsername] = useState<string>(() => {
+    return localStorage.getItem('laundryUsername') || '';
+  });
+
+  const [uploadedFiles, setUploadedFiles] = useState<string[]>(() => {
+    const savedFiles = localStorage.getItem('uploadedFiles');
+    return savedFiles ? JSON.parse(savedFiles) : [];
+  });
   
   const { toast } = useToast();
 
@@ -37,6 +56,46 @@ export const LaundryProvider: React.FC<{ children: React.ReactNode }> = ({ child
   useEffect(() => {
     localStorage.setItem('laundryRole', role);
   }, [role]);
+
+  useEffect(() => {
+    localStorage.setItem('laundryAuth', String(isAuthenticated));
+  }, [isAuthenticated]);
+
+  useEffect(() => {
+    localStorage.setItem('laundryUsername', username);
+  }, [username]);
+
+  useEffect(() => {
+    localStorage.setItem('uploadedFiles', JSON.stringify(uploadedFiles));
+  }, [uploadedFiles]);
+
+  const login = (user: string) => {
+    setUsername(user);
+    setIsAuthenticated(true);
+    toast({
+      title: "Login Successful",
+      description: `Welcome ${user}!`,
+    });
+  };
+
+  const logout = () => {
+    setIsAuthenticated(false);
+    setUsername('');
+    toast({
+      title: "Logged Out",
+      description: "You have been logged out successfully.",
+    });
+  };
+
+  const uploadFile = (file: File) => {
+    // In a real app, this would upload to a server
+    // Here we'll just store the file name
+    setUploadedFiles(prev => [...prev, file.name]);
+    toast({
+      title: "File Uploaded",
+      description: `${file.name} has been uploaded successfully.`,
+    });
+  };
 
   const addBooking = (booking: Omit<Booking, 'id' | 'timestamp'>) => {
     const newBooking = {
@@ -88,6 +147,8 @@ export const LaundryProvider: React.FC<{ children: React.ReactNode }> = ({ child
       value={{
         bookings,
         role,
+        isAuthenticated,
+        username,
         addBooking,
         removeBooking,
         updateBooking,
@@ -95,6 +156,10 @@ export const LaundryProvider: React.FC<{ children: React.ReactNode }> = ({ child
         isSlotAvailable,
         getBookingsByDay,
         getBookingsByStudent,
+        login,
+        logout,
+        uploadFile,
+        uploadedFiles,
       }}
     >
       {children}
